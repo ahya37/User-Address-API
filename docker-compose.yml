@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: address_management_app
+    env_file: 
+      - .env
+    ports:
+      - "8083:8083"
+    volumes:
+      - .:/var/www/html:delegated 
+      - ./vendor:/var/www/html/vendor
+      - ./storage:/var/www/html/storage
+      - ./logs/apache2:/var/log/apache2
+    depends_on:
+      - mysql
+    networks:
+      - address_management_network
+
+  mysql:
+    image: mysql:5.7
+    container_name: address_management_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: address_management
+      MYSQL_USER: address_management_user
+      MYSQL_PASSWORD: address_management
+    ports:
+      - "3311:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    command: --sql_mode="ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"
+    networks:
+      - address_management_network
+
+networks:
+  address_management_network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
+  storage:
+    driver: local
+
