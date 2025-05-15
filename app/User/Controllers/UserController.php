@@ -8,6 +8,8 @@ use App\User\Requests\CreateUserRequest;
 use App\User\Requests\UpdateUserRequest;
 use App\User\Services\UserService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -28,15 +30,28 @@ class UserController extends Controller
 
     public function store(CreateUserRequest $request): JsonResponse
     {
-        $user = $this->userService->createUser($request->all());
-        $users = [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'created_at' => $user->created_at,
-            'updated_at' => $user->updated_at,
-        ];
-        return ResponseFormatter::success($users, 'User created successfully',201);
+        DB::beginTransaction();
+        try {
+
+
+            $user = $this->userService->createUser($request->all());
+
+            $users = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+            ];
+
+            DB::commit();
+            return ResponseFormatter::success($users, 'User created successfully',201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error(['error' => $e->getMessage()]);
+            return ResponseFormatter::error('Error create user');
+        }
     }
 
     public function show(int $id): JsonResponse
